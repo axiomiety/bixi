@@ -6,6 +6,7 @@ import  json
 import  time
 import  logging
 import  os
+import  pickle
 from    xml.etree       import ElementTree
 
 PARSING_MAP = {
@@ -20,6 +21,34 @@ PARSING_MAP = {
 
 POLLING_INTERVAL = 10 # a minute
 UPDATES_DIR = 'updates'
+
+###
+# misc
+
+def _foo(paths):
+  for p in paths:
+    with open(p) as f:
+      x = f.readline()
+    with open('%s.pickle' % p, 'wb') as f:
+      pickle.dump(json.loads(x), f)
+
+def _bar(x):
+  with open(x, 'rb') as f:
+    return pickle.load(f)
+
+###
+# parsing
+
+def prune(update):
+  '''return a condensed version with only the update with just the necessary information'''
+  d = dict()
+  for updatets, up in update.items():
+    for u in up:
+      d[u['id']] = {k: v for k, v in u.items() if k in ['avail_bikes', 'empty_docks', 'updatets']}
+  return d
+
+def get_delta(update):
+  pass
 
 def xml2json(root):
   stations = []
