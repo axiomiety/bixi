@@ -47,8 +47,16 @@ def prune(update):
       d[u['id']] = {k: v for k, v in u.items() if k in ['avail_bikes', 'empty_docks', 'updatets']}
   return d
 
-def get_delta(update):
-  pass
+def get_delta(fr, to):
+  d = {}
+  #TODO: do we care about keys in to but not in fr? (ie, new stations)
+  # maybe we should just check the common keys
+  for loc_id, upd in fr.items():
+    delta = {}
+    for k in ['avail_bikes', 'empty_docks']:
+      delta[k] = upd[k] - to.get(loc_id, {}).get(k, 0)
+    d[loc_id] = delta
+  return d
 
 def xml2json(root):
   stations = []
@@ -70,21 +78,20 @@ def poll(delay=None, as_json=False):
   delay = delay or POLLING_INTERVAL
   if not os.path.exists(UPDATES_DIR):
     os.mkdir(UPDATES_DIR)
-  baseline = fetch()
+  baseline = json.loads(fetch())
   running = True
   while(running):
-    snap = fetch()
-    if snap != baseline: # we have an update
+    snap = json.loads(fetch())
+    if snap.keys() != baseline.keys(): # we have an update
       logging.info('update found!')
-      o = json.loads(snap)
-      ts = list(o.keys())[0]
+      ts = list(snap.keys())[0]
       # save it out!
       if as_json:
         with open(os.path.join(UPDATES_DIR, ts), 'a') as f:
-          f.write(snap)
+          f.write(json.dumps(snap))
       else:
         with open(os.path.join(UPDATES_DIR, '%s.pickle' % ts), 'wb') as f:
-          pickle.dump(prune(o), f)
+          pickle.dump(prune(snap), f)
 
       baseline = snap
 
