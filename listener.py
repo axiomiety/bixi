@@ -66,7 +66,7 @@ def fetch():
     xml = ElementTree.fromstring(raw_data)
     return xml2json(xml)
 
-def poll(delay=None):
+def poll(delay=None, as_json=False):
   delay = delay or POLLING_INTERVAL
   if not os.path.exists(UPDATES_DIR):
     os.mkdir(UPDATES_DIR)
@@ -79,8 +79,13 @@ def poll(delay=None):
       o = json.loads(snap)
       ts = list(o.keys())[0]
       # save it out!
-      with open(os.path.join(UPDATES_DIR, ts), 'a') as f:
-        f.write(snap)
+      if as_json:
+        with open(os.path.join(UPDATES_DIR, ts), 'a') as f:
+          f.write(snap)
+      else:
+        with open(os.path.join(UPDATES_DIR, '%s.pickle' % ts), 'wb') as f:
+          pickle.dump(prune(o), f)
+
       baseline = snap
 
     time.sleep(delay)
