@@ -69,9 +69,18 @@ def xml2json(root):
 
 def fetch():
   req = urllib.request.urlopen('https://toronto.bixi.com/data/bikeStations.xml')
-  raw_data = req.read()
+  raw_data = bytearray()
+  while True:
+    raw = req.read()
+    if not raw: break
+    raw_data.extend(raw)
   if raw_data:
-    xml = ElementTree.fromstring(raw_data)
+    raw_data = bytes(raw_data)
+    try:
+      xml = ElementTree.fromstring(raw_data)
+    except ElementTree.ParseError as e:
+      logging.error('Could not parse string as xml: %s' % raw_data)
+      raise e
     return xml2json(xml)
 
 def poll(delay=None, as_json=False):
