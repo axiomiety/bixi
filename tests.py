@@ -38,7 +38,7 @@ class DistanceMatrixTest(unittest.TestCase):
     gen_url.assert_called_with(self.locations[1], self.locations[2])
     self.assertEqual(dm, o)
 
-class ParserTest(unittest.TestCase):
+class ListenerTest(unittest.TestCase):
   
   @classmethod
   def setUpClass(cls):
@@ -51,6 +51,23 @@ class ParserTest(unittest.TestCase):
     j = listener.xml2json(self.xml)
     expected = '''{"1388933822252": [{"avail_bikes": 8, "empty_docks": 7, "id": "1", "lat": 43.66207, "long": -79.37617, "name": "Jarvis St/ Carleton St", "updatets": 1388899793575}, {"avail_bikes": 3, "empty_docks": 12, "id": "5", "lat": 43.6636, "long": -79.3806, "name": "Church St/ Alexander St", "updatets": 1388903405786}]}'''
     self.assertEqual(expected, j)
+
+  def test_get_delta(self):
+    u1 = {'1': {'updatets': 1389664469715, 'avail_bikes': 13, 'empty_docks': 10},
+          '2': {'updatets': 1389677556074, 'avail_bikes': 11, 'empty_docks': 8}}
+    u2 = {'1': {'updatets': 1389664469715, 'avail_bikes': 15, 'empty_docks': 8},
+          '2': {'updatets': 1389677556074, 'avail_bikes': 6, 'empty_docks': 13}}
+
+    expected = {'1': {'avail_bikes': -2, 'empty_docks': 2},
+                '2': {'avail_bikes': 5, 'empty_docks': -5}}
+    self.assertEqual(listener.get_delta(u1, u2), expected)
+
+  def test_prune(self):
+    import json
+    o = listener.prune(json.loads(listener.xml2json(self.xml)))
+    expected = {'1': {'avail_bikes': 8, 'empty_docks': 7, 'updatets': 1388899793575},
+                '5': {'avail_bikes': 3, 'empty_docks': 12, 'updatets': 1388903405786}}
+    self.assertEqual(o, expected)
 
 if __name__ == '__main__':
   unittest.main()
